@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr-FR">
+	<head>
+		<meta charset="UTF-8" />
+		<title>HTML Viewer</title>
+	</head>
+	<body>
+		<h1 id="title" style="text-align: center;" > HTML Viewer </h1>
+		<div id="inputForm" style="text-align: center;">
+			<h3>Texte HTML à afficher:</h3>
+			<textarea name="input" id="htmlinput" rows="20" cols="33" style="width: 100%;"></textarea> <br>
+			<input id="submitForm" type="button" onclick="showText()" value="Convertir" style="text-align: center;"/>
+		</div>
+
+		<div id="output">
+			<h3 id="outputlbl" style="text-align: center;">Texte converti:</h3>
+			<div id="htmlOutput" style="border: 1px solid black; width: 100%;"></div>
+		</div>
+	</body>
+	<script>
+	function showText(){
+		//alert(document.getElementById("htmlinput").value);
+		document.getElementById("htmlOutput").innerHTML = document.getElementById("htmlinput").value;
+	}
+	</script>
+</html>
