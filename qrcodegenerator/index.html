@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr-FR">
+	<head>
+		<meta charset="UTF-8" />
+		<title>QRCode Generator</title>
+        <script type="text/javascript" src="qrcode.min.js"></script>
+	</head>
+	<body>
+		<h1 id="title" style="text-align: center;">QRCode Generator</h1>
+		<div id="inputForm" style="text-align: center;">
+			<h3>Texte à intégrer au QRCode: </h3>
+			<input type="text" name="input" id="contentinput"></textarea> <br> <br>
+			<input id="submitForm" type="button" onclick="generateQRCode()" value="Générer un QRCode" style="text-align: center;"/>
+		</div>
+
+		<div id="output" style="text-align: center;">
+			<h3 id="outputlbl">QRCode: </h3>
+			<div id="qrcode"></div>
+		</div>
+	</body>
+	<script>
+    var qrcode = new QRCode("qrcode");
+    
+    function generateQRCode(){
+        qrcode.clear();
+        if (document.getElementById("contentinput").value.length > 0) {
+            qrcode.makeCode(document.getElementById("contentinput").value);
+        }
+    }
+	</script>
+
+
+<footer style="text-align: center; position: absolute; bottom: 0; align-items: center; width: 100%;">
+    <p> Page totalement inspirée par <a href="https://davidshimjs.github.io/qrcodejs/">ce lien</a></p>
+</footer>
+</html>
