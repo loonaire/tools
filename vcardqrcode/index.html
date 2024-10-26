@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr-FR">
+	<head>
+		<meta charset="UTF-8" />
+		<title>QRCode Generator</title>
+        <script type="text/javascript" src="qrcode.min.js"></script>
+		<style>
+			body {
+				color-scheme: light dark;
+				background-color: Canvas;
+				color: CanvasText;
+				color-scheme: light dark;
+			}
+		</style>
+	</head>
+	<body>
+		<h1 id="title" style="text-align: center;">QRCode Generator</h1>
+
+		<div id="generateFromFile" style="text-align: center;">
+			<h2>Generate from file:</h2>
+			<div style="text-align: center;">
+				<label for="fileInput">Générer un QRCode depuis un fichier vCard:</label><br>
+				<input type="file" id="fileInput" name="fileInput" accept=".vcf, text/x-vcard" onchange="generateQRCodeFromFile()"/>
+			</div>
+		</div>
+
+		<div id="generateFromText" style="text-align: center;">
+			<h2>Generate from vCard file content</h2>
+			<div id="inputForm" style="text-align: center;">
+				<h3>Texte à intégrer au QRCode: </h3>
+				<textarea name="input" id="contentinput" rows="10" cols="50" maxlength="4296"></textarea> <br> <br>
+				<input id="submitForm" type="button" onclick="generateQRCode()" value="Générer un QRCode" style="text-align: center;"/>
+			</div>
+
+			<div id="output" style="text-align: center;">
+				<h3 id="outputlbl">QRCode: </h3>
+				<div id="qrcodeoutput"></div>
+			</div>
+		</div>
+	</body>
+	<script>
+    var qrcode = new QRCode("qrcodeoutput");
+    
+    function generateQRCode(){
+        qrcode.clear();
+        if (document.getElementById("contentinput").value.length > 0) {
+            qrcode.makeCode(document.getElementById("contentinput").value);
+        }
+    }
+	function generateQRCodeFromFile(){
+        qrcode.clear();
+		console.log(document.getElementById("fileInput").files[0]);
+
+		VCardFileReader = new FileReader();
+		VCardFileReader.onload = () => {
+			console.log(VCardFileReader.result);
+			qrcode.makeCode(VCardFileReader.result);
+			document.getElementById("qrcodeoutput").setAttribute("align", "center");
+			//document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("border", "1mm solid white");
+			//document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("outline", "2mm solid white");
+			document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("border", "1px solid white");
+			//document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("margin", "10px");
+			//document.getElementById("qrcodeoutput").getElementsByTagName('img').setAttribute("background-color", "white");
+
+
+		};
+		VCardFileReader.readAsText(document.getElementById("fileInput").files[0]);
+    }
+
+	function openTab(evt, contentToDisplay) {
+		var i, tabcontent, tablinks;
+		tabcontent = document.getElementsByClassName("tabcontent");
+		for (i = 0; i < tabcontent.length; i++) {
+			tabcontent[i].style.display = "none";
+		}
+		tablinks = document.getElementsByClassName("tablinks");
+		for (i = 0; i < tablinks.length; i++) {
+			tablinks[i].className = tablinks[i].className.replace(" active", "");
+		}
+		document.getElementById(contentToDisplay).style.display = "block";
+		evt.currentTarget.className += " active";
+	}
+	</script>
+
+
+<footer style="text-align: center; position: absolute; bottom: 0; align-items: center; width: 100%;">
+    <p> Page totalement inspirée par <a href="https://davidshimjs.github.io/qrcodejs/">ce lien</a></p>
+</footer>
+</html>

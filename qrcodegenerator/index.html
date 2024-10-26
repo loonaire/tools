@@ -9,22 +9,23 @@
 		<h1 id="title" style="text-align: center;">QRCode Generator</h1>
 		<div id="inputForm" style="text-align: center;">
 			<h3>Texte à intégrer au QRCode: </h3>
-			<input type="text" name="input" id="contentinput"></textarea> <br> <br>
+			<textarea name="input" id="contentinput" row="50" cols="50" maxlength="4296"></textarea> <br> <br>
 			<input id="submitForm" type="button" onclick="generateQRCode()" value="Générer un QRCode" style="text-align: center;"/>
 		</div>
 
 		<div id="output" style="text-align: center;">
 			<h3 id="outputlbl">QRCode: </h3>
-			<div id="qrcode"></div>
+			<div id="qrcodeoutput"></div>
 		</div>
 	</body>
 	<script>
-    var qrcode = new QRCode("qrcode");
+    var qrcode = new QRCode("qrcodeoutput");
     
     function generateQRCode(){
         qrcode.clear();
         if (document.getElementById("contentinput").value.length > 0) {
             qrcode.makeCode(document.getElementById("contentinput").value);
+			document.getElementById("qrcodeoutput").setAttribute("align", "center");
         }
     }
 	</script>
