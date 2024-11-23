@@ -2,7 +2,7 @@
 <html lang="fr-FR">
 	<head>
 		<meta charset="UTF-8" />
-		<title>QRCode Generator</title>
+		<title>Contact QRCode Generator</title>
         <script type="text/javascript" src="qrcode.min.js"></script>
 		<style>
 			body {
@@ -11,79 +11,192 @@
 				color: CanvasText;
 				color-scheme: light dark;
 			}
+			details {
+				text-align: center;
+			}
+			summary {
+				font-size: 200%;
+			}
+
+			form {
+				display: grid;
+				max-width: 10%;
+				margin: 0 auto;
+			}
+
+			footer {
+				text-align: center; 
+				bottom: 0; 
+				align-items: center; 
+				width: 100%;
+			}
 		</style>
 	</head>
 	<body>
-		<h1 id="title" style="text-align: center;">QRCode Generator</h1>
+		<h1 style="text-align: center;">QRCode Generator</h1>
 
-		<div id="generateFromFile" style="text-align: center;">
-			<h2>Generate from file:</h2>
-			<div style="text-align: center;">
-				<label for="fileInput">Générer un QRCode depuis un fichier vCard:</label><br>
-				<input type="file" id="fileInput" name="fileInput" accept=".vcf, text/x-vcard" onchange="generateQRCodeFromFile()"/>
-			</div>
-		</div>
-
-		<div id="generateFromText" style="text-align: center;">
-			<h2>Generate from vCard file content</h2>
-			<div id="inputForm" style="text-align: center;">
-				<h3>Texte à intégrer au QRCode: </h3>
+		<details name="reqs">		
+				<summary>Générer depuis un fichier</summary>
+				<div style="text-align: center;">
+					<label for="fileInput">Générer un QRCode depuis un fichier vCard (.vcf)</label><br><br>
+					<input type="file" id="fileInput" name="fileInput" accept=".vcf, text/x-vcard" onchange="generateQRCodeFromFile()"/>
+				</div>
+				<br><br>
+		</details>		
+		<details name="reqs">
+			<summary>Générer un QRCode depuis le contenu d'un fichier vcf</summary>
+				<p>Code au format vCard 3.0 (voir cet <a href="https://en.wikipedia.org/wiki/VCard">autricle Wikipedia</a> pour plus d'informations) </p>
 				<textarea name="input" id="contentinput" rows="10" cols="50" maxlength="4296"></textarea> <br> <br>
-				<input id="submitForm" type="button" onclick="generateQRCode()" value="Générer un QRCode" style="text-align: center;"/>
-			</div>
+				<input id="submitForm" type="button" onclick="generateQRCodeFromContent()" value="Générer un QRCode" style="text-align: center;"/>
+		</details>
+		
+		<details name="reqs">
+			<summary>Générer une vCard</summary>
+			<form id="generateQRCodeFromForm">
+				<!-- TODO
+					- Possibilité de générer un fichier vcf				
+				-->
+				<label for="fullName">Nom Complet:</label>
+				<input type="text" id="fullName" name="fullName" required><br>
+		
+				<label for="firstName">Prénom:</label>
+				<input type="text" id="firstName" name="firstName"><br>
+		
+				<label for="lastName">Nom de Famille:</label>
+				<input type="text" id="lastName" name="lastName"><br>
+		
+				<label for="email">E-mail:</label>
+				<input type="email" id="email" name="email" required><br>
+		
+				<label for="phone">Téléphone:</label>
+				<input type="tel" id="phone" name="phone"><br>
+		
+				<label for="mobile">Mobile:</label>
+				<input type="tel" id="mobile" name="mobile"><br>
+			
+				<label for="address">Adresse:</label>
+				<input type="text" id="address" name="address"><br>
+		
+				<label for="city">Ville:</label>
+				<input type="text" id="city" name="city"><br>
+		
+				<label for="postalCode">Code Postal:</label>
+				<input type="text" id="postalCode" name="postalCode"><br>
+		
+				<label for="country">Pays:</label>
+				<input type="text" id="country" name="country"><br>
+		
+				<label for="organization">Organisation:</label>
+				<input type="text" id="organization" name="organization"><br>
+		
+				<label for="title">Titre:</label>
+				<input type="text" id="title" name="title"><br>
+		
+				<label for="url">Site web:</label>
+				<input type="url" id="url" name="url"><br><br>
+		
+				<button type="submitQRCodeForm" style="margin-top: 20%;">Générer un QRCode</button>
+				<button type="button" id="saveToFileButton">Sauvegarder dans un fichier</button>
+			</form>
+		</details>
 
-			<div id="output" style="text-align: center;">
-				<h3 id="outputlbl">QRCode: </h3>
-				<div id="qrcodeoutput"></div>
-			</div>
+		<div id="output" style="text-align: center;">
+			<h3 id="outputlbl">QRCode: </h3>
+			<div id="qrcodeoutput"></div>
+			<p>Pour enregistrer le QRCode sous la forme d'image, clique droit sur l'image -> Enregistrer sous </p>
 		</div>
+		<footer>
+			<p> Page totalement inspirée par <a href="https://davidshimjs.github.io/qrcodejs/">ce lien</a></p>
+		</footer>
 	</body>
+
 	<script>
-    var qrcode = new QRCode("qrcodeoutput");
-    
-    function generateQRCode(){
-        qrcode.clear();
-        if (document.getElementById("contentinput").value.length > 0) {
-            qrcode.makeCode(document.getElementById("contentinput").value);
-        }
-    }
-	function generateQRCodeFromFile(){
-        qrcode.clear();
-		console.log(document.getElementById("fileInput").files[0]);
-
-		VCardFileReader = new FileReader();
-		VCardFileReader.onload = () => {
-			console.log(VCardFileReader.result);
-			qrcode.makeCode(VCardFileReader.result);
+		var qrcode = new QRCode("qrcodeoutput");
+		
+		function generateQRCode(qrcodeContent){
+			qrcode.clear();
+			qrcode.makeCode(qrcodeContent);
 			document.getElementById("qrcodeoutput").setAttribute("align", "center");
-			//document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("border", "1mm solid white");
-			//document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("outline", "2mm solid white");
 			document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("border", "1px solid white");
-			//document.getElementById("qrcodeoutput").getElementsByTagName('img')[0].setAttribute("margin", "10px");
-			//document.getElementById("qrcodeoutput").getElementsByTagName('img').setAttribute("background-color", "white");
-
-
-		};
-		VCardFileReader.readAsText(document.getElementById("fileInput").files[0]);
-    }
-
-	function openTab(evt, contentToDisplay) {
-		var i, tabcontent, tablinks;
-		tabcontent = document.getElementsByClassName("tabcontent");
-		for (i = 0; i < tabcontent.length; i++) {
-			tabcontent[i].style.display = "none";
 		}
-		tablinks = document.getElementsByClassName("tablinks");
-		for (i = 0; i < tablinks.length; i++) {
-			tablinks[i].className = tablinks[i].className.replace(" active", "");
+
+		function generateQRCodeFromContent(){
+			if (document.getElementById("contentinput").value.length > 0) {
+				generateQRCode(document.getElementById("contentinput").value);
+			}
 		}
-		document.getElementById(contentToDisplay).style.display = "block";
-		evt.currentTarget.className += " active";
-	}
+
+		function generateQRCodeFromFile(){
+			VCardFileReader = new FileReader();
+			VCardFileReader.onload = () => {
+				generateQRCode(VCardFileReader.result)
+			};
+			VCardFileReader.readAsText(document.getElementById("fileInput").files[0]);
+		}
+
+		//document.getElementById('vcardForm').addEventListener('submit', function(event) {
+		document.getElementById('generateQRCodeFromForm').addEventListener('submit', function(event) {
+				event.preventDefault();
+				vCard = generateVCardContent();
+				generateQRCode(vCard);
+		});
+
+		document.getElementById("saveToFileButton").addEventListener("click", function() {
+            // Récupérer les données du formulaire
+            const form = document.getElementById("generateQRCodeFromForm");
+
+			const vCardContent = generateVCardContent();
+			const blob = new Blob([vCardContent], { type: "text/x-vcard" });
+            const url = URL.createObjectURL(blob);
+
+            // Créer un lien pour télécharger le fichier
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "formulaire_data.vcf";
+			document.body.appendChild(a);
+            a.click();
+			
+            // Libérer l'URL temporaire
+			document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+
+		function isStringEmpty(str){
+			return !str || !str.trim().length;
+		}
+
+		function generateVCardContent(){
+			const fullName = isStringEmpty(document.getElementById('fullName').value) ? "" : `FN:${document.getElementById('fullName').value}`;
+			const firstName = isStringEmpty(document.getElementById('firstName').value) ? "" : document.getElementById('firstName').value;
+			const lastName = isStringEmpty(document.getElementById('lastName').value) ? "" : document.getElementById('lastName').value;
+			const name = `N:${lastName};${firstName};;;`;
+			const email = isStringEmpty(document.getElementById('email').value) ? "" : `EMAIL:${document.getElementById('email').value}`;
+			const phone = isStringEmpty(document.getElementById('phone').value) ? "" : `TEL;TYPE=CELL:${document.getElementById('phone').value}`;
+			const mobile = isStringEmpty(document.getElementById('mobile').value) ? "" : `TEL;TYPE=CELL:${document.getElementById('mobile').value}`;
+			const address = isStringEmpty(document.getElementById('address').value) ? "" : document.getElementById('address').value;
+			const city = isStringEmpty(document.getElementById('city').value) ? "" : document.getElementById('city').value;
+			const postalCode = isStringEmpty(document.getElementById('postalCode').value) ? "" : document.getElementById('postalCode').value;
+			const country = isStringEmpty(document.getElementById('country').value) ? "" : document.getElementById('country').value;
+			const fullAddress = `ADR;TYPE=WORK:;;${address};${city};;${postalCode};${country}`;
+			const organization = isStringEmpty(document.getElementById('organization').value) ? "" : `ORG:${document.getElementById('organization').value}`;
+			const title = isStringEmpty(document.getElementById('title').value) ? "" : `TITLE:${document.getElementById('title').value}`;
+			const url = isStringEmpty(document.getElementById('url').value) ? "" : `URL:${document.getElementById('url').value}`;
+
+			const vCard = `BEGIN:VCARD
+VERSION:3.0
+${fullName}
+${name}
+${email}
+${phone}
+${mobile}
+${fullAddress}
+${organization}
+${title}
+${url}
+END:VCARD`;
+			return vCard
+		}
+		
 	</script>
-
-
-<footer style="text-align: center; position: absolute; bottom: 0; align-items: center; width: 100%;">
-    <p> Page totalement inspirée par <a href="https://davidshimjs.github.io/qrcodejs/">ce lien</a></p>
-</footer>
 </html>
