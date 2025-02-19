@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Codes-Barres</title>
+    <script src="JsBarcode.all.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            text-align: center;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            width: 100%;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+        #barcode-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
+        #barcode {
+            width: 300px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Générateur de Codes-Barres</h1>
+    <div class="form-container">
+        <input type="text" id="codeInput" placeholder="Entrez un code">
+        <select id="barcodeType">
+            <option value="CODE128">CODE128</option>
+            <option value="EAN13">EAN13</option>
+            <option value="UPC">UPC</option>
+        </select>
+        <button onclick="generateBarcode()">Générer</button>
+        <button onclick="saveBarcode()">Enregistrer en tant qu'image</button>
+        <p id="error-message"></p>
+    </div>
+    <div id="barcode-container">
+        <svg id="barcode"></svg>
+    </div>
+
+    <footer>
+        <p>Squelette de la page généré par ChatGPT puis adapté</p>
+    </footer>
+
+    <script>
+        function isValidInput(input, type) {
+            let errorMessage = document.getElementById("error-message");
+            errorMessage.textContent = "";
+            
+            if (type === "EAN13" && !/^\d{12,13}$/.test(input)) {
+                errorMessage.textContent = "Le code EAN13 doit contenir 12 ou 13 chiffres.";
+                return false;
+            }
+            if (type === "UPC" && !/^\d{11,12}$/.test(input)) {
+                errorMessage.textContent = "Le code UPC doit contenir 11 ou 12 chiffres.";
+                return false;
+            }
+            return true;
+        }
+
+        function generateBarcode() {
+            let input = document.getElementById("codeInput").value;
+            let type = document.getElementById("barcodeType").value;
+            let errorMessage = document.getElementById("error-message");
+            
+            if (input.trim() !== "" && isValidInput(input, type)) {
+                JsBarcode("#barcode", input, {
+                    format: type,
+                    displayValue: true,
+                    lineColor: "#000000",
+                    background: "#ffffff",
+                    width: 2,
+                    height: 100
+                });
+            } else {
+                errorMessage.textContent = "Veuillez entrer un code valide.";
+            }
+        }
+
+        function saveBarcode() {
+            let svg = document.getElementById("barcode");
+            let serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svg);
+            let svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+            let url = URL.createObjectURL(svgBlob);
+            let link = document.createElement("a");
+            link.href = url;
+            link.download = "barcode.svg";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Codes-Barres 2D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bwip-js/3.0.0/bwip-js.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            text-align: center;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            width: 100%;
+        }
+
+        .barcode-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        canvas {
+            border: 5px solid #ffffff;
+            background-color: #ffffff;
+        }
+
+        textarea {
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            padding: 8px;
+            margin: 5px;
+            width: 50%;
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            width: 15%;
+        }
+
+        button {
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Générateur de Codes-Barres 2D</h1>
+    <textarea id="text" placeholder="Entrez un texte" rows="4"></textarea>
+    <select id="barcodeType">
+        <option value="azteccode">Aztec Code</option>
+        <option value="azteccodecompact">Aztec Code Compact</option>   
+        <option value="aztecrune">Aztec Rune</option>
+        <option value="codablockf">Coda Block F</option>
+        <option value="code49">Code 49</option>
+        <option value="code16k">Code16k</option>
+        <option value="codeone">Code One</option>
+        <option value="datamatrix">DataMatrix</option>
+        <option value="datamatrixrectangular">DataMatrix Rectangular</option>
+        <option value="datamatrixrectangularextension">DataMatrix Rectangular Extension</option>
+        <option value="dotcode">DotCode</option>
+        <option value="hanxin">Han Xin</option>
+        <option value="maxicode">MaxiCode</option>
+        <option value="micropdf417">MicroPDF417</option>
+        <option value="microqrcode">Micro QR Code</option>
+        <option value="pdf417">PDF417</option>
+        <option value="pdf417compact">PDF417 Compact</option>
+        <option value="qrcode" selected>QR Code</option>
+        <option value="rectangularmicroqrcode" selected>Rectangular Micro QR Code</option>
+        <option value="swissqrcode">Swiss QRCode</option>
+        <option value="ultracode">UltraCode</option>        
+    </select>
+    <button onclick="generateBarcode()">Générer</button>
+    <button onclick="saveBarcode()">Enregistrer en tant qu'image</button>
+    <div class="barcode-container">
+        <canvas id="barcodeCanvas"></canvas>
+    </div>
+
+    <footer>
+        <p>Squelette de la page généré par ChatGPT puis adapté</p>
+    </footer>
+    <script>
+        function generateBarcode() {
+            let text = document.getElementById("text").value.trim();
+            let type = document.getElementById("barcodeType").value;
+            let canvas = document.getElementById("barcodeCanvas");
+            let ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (text === "") {
+                alert("Veuillez entrer un texte valide pour générer un code-barres.");
+                return;
+            }
+            
+            bwipjs.toCanvas(canvas, {
+                bcid: type,
+                text: text,
+                scale: 5,
+                includetext: true,
+                backgroundcolor: "FFFFFF"
+            }, function (err) {
+                if (err) {
+                    console.error("Erreur de génération du code-barres: ", err);
+                    alert("Erreur lors de la génération du code-barres. Veuillez vérifier votre texte.");
+                }
+            });
+        }
+
+        function saveBarcode() {
+            let canvas = document.getElementById("barcodeCanvas");
+            let borderSize = 5; // Taille de la bordure
+            // Créer un nouveau canvas avec une bordure
+            let newCanvas = document.createElement("canvas");
+            newCanvas.width = canvas.width + borderSize * 2;
+            newCanvas.height = canvas.height + borderSize * 2;
+            let ctx = newCanvas.getContext("2d");
+            // Dessiner le fond avec la bordure
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+            // Dessiner l'image originale au centre
+            ctx.drawImage(canvas, borderSize, borderSize);
+
+            // Exporter l'image avec la bordure
+            let link = document.createElement("a");
+            link.download = "barcode.png";
+            link.href = newCanvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+</body>
+</html>
