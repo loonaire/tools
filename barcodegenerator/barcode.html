@@ -69,6 +69,7 @@
         <input type="text" id="codeInput" placeholder="Entrez un code">
         <select id="barcodeType">
             <option value="CODE128">CODE128</option>
+            <option value="CODE39">CODE39</option>
             <option value="EAN13">EAN13</option>
             <option value="UPC">UPC</option>
         </select>
@@ -112,7 +113,8 @@
                     lineColor: "#000000",
                     background: "#ffffff",
                     width: 2,
-                    height: 100
+                    height: 100,
+                    mod43:true
                 });
             } else {
                 errorMessage.textContent = "Veuillez entrer un code valide.";
