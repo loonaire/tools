@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Générateur de codes-barres</title>
+
+<!-- Bibliothèque de génération (tout l'algorithme est dedans : le JS du fichier reste minime) -->
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; background: #f5f6f8; color: #222; }
+  h1 { font-size: 1.4rem; }
+  .card { background: #fff; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  label { display: block; margin: .6rem 0 .2rem; font-weight: 600; font-size: .9rem; }
+  input, select { width: 100%; padding: .5rem; border: 1px solid #bbb; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
+  #zone { background: #fff; margin-top: 1.25rem; padding: 1rem; border: 1px dashed #ccc; border-radius: 10px; text-align: center; min-height: 120px; }
+  #zone svg { max-width: 100%; }
+  #erreur { color: #b00020; font-size: .9rem; margin-top: .5rem; }
+  .aide { color: #666; font-size: .85rem; margin-top: .8rem; }
+  button { margin-top: 1rem; padding: .5rem 1rem; border: 0; border-radius: 6px; background: #2563eb; color: #fff; font-size: 1rem; cursor: pointer; }
+  button:hover { background: #1d4ed8; }
+  /* Marge de page nulle : le navigateur n'a plus d'espace pour imprimer
+     ses en-têtes/pieds automatiques (URL, date, numéro de page…). */
+  @page { margin: 1.5cm; }
+  @media print {
+    body > *:not(#zone) { display: none; }
+    body { margin: 0; }
+    #zone { border: 0; margin: 0; padding: 1cm 0; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Générateur de codes-barres</h1>
+
+<div class="card">
+  <label for="f">Type de code</label>
+  <select id="f">
+    <option>CODE128</option>
+    <option>CODE128A</option>
+    <option>CODE128B</option>
+    <option>CODE128C</option>
+    <option>CODE39</option>
+    <option>EAN13</option>
+    <option>EAN8</option>
+    <option>EAN5</option>
+    <option>EAN2</option>
+    <option>UPC</option>
+    <option>ITF</option>
+    <option>ITF14</option>
+    <option>MSI</option>
+    <option>pharmacode</option>
+    <option>codabar</option>
+  </select>
+
+  <label for="v">Valeur</label>
+  <input id="v" value="HELLO-123" autocomplete="off" spellcheck="false">
+
+  <label for="t">Taille (module)</label>
+  <input id="t" type="range" min="1" max="5" step="0.5" value="2">
+
+  <p class="aide">
+    EAN, UPC, ITF et MSI exigent uniquement des chiffres.
+    EAN13 accepte 12 chiffres (la clé de contrôle est calculée automatiquement).
+    CODE39 : lettres majuscules, chiffres et <code>- . SPACE $ / + %</code>.
+  </p>
+
+  <button onclick="print()">Imprimer / Enregistrer en PDF</button>
+</div>
+
+<div id="zone"><svg id="bc"></svg></div>
+<p id="erreur"></p>
+
+<script>
+/* Le strict minimum : brancher le formulaire sur la bibliothèque. */
+const gen = () => {
+  try {
+    JsBarcode("#bc", v.value.trim() || " ", {
+      format: f.value, height: 80, fontSize: 16, margin: 10,
+      width: +t.value, displayValue: true
+    });
+    erreur.textContent = "";
+  } catch (e) {
+    erreur.textContent = "Valeur non valide pour ce type de code.";
+  }
+};
+for (const el of [f, v, t]) el.addEventListener("input", gen);
+gen();
+</script>
+
+</body>
+</html>
+

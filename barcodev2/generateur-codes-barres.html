@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Générateur de codes-barres</title>
+
+<!-- Une seule bibliothèque, un seul fichier .js local : elle fait TOUT (1D et 2D),
+     aucun CDN, aucun Node.js — la page fonctionne entièrement hors ligne. -->
+<script src="bwip-js-min.js"></script>
+
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; background: #f5f6f8; color: #222; }
+  h1 { font-size: 1.4rem; }
+  .card { background: #fff; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  label { display: block; margin: .6rem 0 .2rem; font-weight: 600; font-size: .9rem; }
+  input, select { width: 100%; padding: .5rem; border: 1px solid #bbb; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
+  #zone { background: #fff; margin-top: 1.25rem; padding: 1rem; border: 1px dashed #ccc; border-radius: 10px; text-align: center; min-height: 120px; }
+  #zone canvas { max-width: 100%; }
+  #erreur { color: #b00020; font-size: .9rem; margin-top: .5rem; }
+  #feedback { font-size: .9rem; margin-top: .5rem; }
+  .aide { color: #666; font-size: .85rem; margin-top: .8rem; }
+  button { margin-top: 1rem; padding: .5rem 1rem; border: 0; border-radius: 6px; background: #2563eb; color: #fff; font-size: 1rem; cursor: pointer; }
+  button:hover { background: #1d4ed8; }
+  /* Marge de page nulle : le navigateur n'a plus d'espace pour imprimer
+     ses en-têtes/pieds automatiques (URL, date, numéro de page…). */
+  @page { margin: 0; }
+  @media print {
+    body > *:not(#zone) { display: none; }
+    body { margin: 0; }
+    #zone { border: 0; margin: 0; padding: 1cm 0; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Générateur de codes-barres</h1>
+
+<div class="card">
+  <label for="f">Type de code</label>
+  <select id="f">
+    <optgroup label="1D (linéaires)">
+      <option>CODE128</option>
+      <option>CODE39</option>
+      <option>EAN13</option>
+      <option>EAN8</option>
+      <option>EAN5</option>
+      <option>EAN2</option>
+      <option>UPC</option>
+      <option>ITF</option>
+      <option>ITF14</option>
+      <option>MSI</option>
+      <option>pharmacode</option>
+      <option>codabar</option>
+    </optgroup>
+    <optgroup label="2D">
+      <option>QRCode</option>
+      <option>DataMatrix</option>
+      <option>PDF417</option>
+      <option>Aztec</option>
+    </optgroup>
+  </select>
+
+  <div id="eccbox" hidden>
+    <label for="ecc">Correction d'erreurs (QRCode)</label>
+    <select id="ecc">
+      <option value="L">L — environ 7 %</option>
+      <option value="M" selected>M — environ 15 %</option>
+      <option value="Q">Q — environ 25 %</option>
+      <option value="H">H — environ 30 %</option>
+    </select>
+  </div>
+
+  <label for="v">Valeur</label>
+  <input id="v" value="HELLO-123" autocomplete="off" spellcheck="false">
+
+  <label for="t">Taille (module)</label>
+  <input id="t" type="range" min="1" max="5" step="0.5" value="2">
+
+  <p class="aide">
+    EAN, UPC, ITF et MSI exigent uniquement des chiffres.
+    EAN13 accepte 12 chiffres (la clé de contrôle est calculée automatiquement).
+    CODE128 choisit tout seul le meilleur sous-ensemble (A, B ou C).
+    CODE39 : lettres majuscules, chiffres et <code>- . SPACE $ / + %</code>.
+    codabar : démarreur/fin A à D, p. ex. <code>A12345B</code>.
+    Les codes 2D (QRCode, DataMatrix, PDF417, Aztec) acceptent n'importe quel texte,
+    accents et URL compris.
+  </p>
+
+  <button onclick="print()">Imprimer / Enregistrer en PDF</button>
+  <button onclick="exporter()">Exporter en PNG</button>
+  <button onclick="copier()">Copier l'image</button>
+</div>
+
+<div id="zone"><canvas id="bc2d"></canvas></div>
+<p id="erreur"></p>
+<p id="feedback"></p>
+
+<script>
+/* Le strict minimum : brancher le formulaire sur la bibliothèque bwip-js
+   (fichier local bwip-js-min.js), qui dessine aussi bien les 1D que les 2D
+   sur le même canvas. Une seule dépendance JS, toute la page est hors ligne. */
+const BC2D = { QRCode: "qrcode", DataMatrix: "datamatrix", PDF417: "pdf417", Aztec: "azteccode" };
+/* Codes 1D : même bibliothèque (bwip-js), plus besoin de JsBarcode.
+   Noms bwip-js réels (vérifiés) : "upca" (UPC-A), "interleaved2of5" (ITF),
+   "rationalizedCodabar" (Codabar). */
+const BC1D = {
+  CODE128: "code128", CODE39: "code39", EAN13: "ean13", EAN8: "ean8",
+  EAN5: "ean5", EAN2: "ean2", UPC: "upca", ITF: "interleaved2of5",
+  ITF14: "itf14", MSI: "msi", pharmacode: "pharmacode", codabar: "rationalizedCodabar",
+};
+/* Options communes 1D. bwip-js multiplie TOUT par "scale" et réserve une
+   place pour le texte proportionnelle à l'échelle : la formule simple
+   "60/scale" ne suffit donc PAS à garder une hauteur fixe.
+   Solution : à chaque valeur du curseur, on cherche par dichotomie la
+   hauteur (en points) qui donne une image de HAUTEUR TOUJOURS IDENTIQUE
+   (cible ≈ 195 px), quelle que soit l'échelle et la symbologie. */
+const HAUTEUR_CIBLE = 195;
+const calages = {}; // par type : echelle -> hauteur en points
+const ECHANTILLONS = { // une valeur VALIDE par symbologie pour la sonde de calage
+  code128: "AB12", code39: "AB12", ean13: "123456789012", ean8: "1234567",
+  ean5: "12345", ean2: "51", upca: "123456789012", interleaved2of5: "12345678",
+  itf14: "1234567890123", msi: "1234", pharmacode: "1234", rationalizedCodabar: "A123B",
+};
+const opts1D = (echelle, un) => {
+  if (!calages[un]) calages[un] = {};
+  let pts = calages[un][echelle];
+  if (pts === undefined) {
+    const mesure = (p) => {
+      const c = document.createElement("canvas");
+      bwipjs.toCanvas(c, { bcid: un, text: ECHANTILLONS[un] || "1234", scale: echelle,
+                           height: p, textsize: 24 / echelle, includetext: true, margin: 0 });
+      return c.height;
+    };
+    let bas = 0.5, haut = 80, best = 60 / echelle; // repli si la recherche capote
+    for (let i = 0; i < 10; i++) { // dichotomie : précision < 0,1 pt
+      const m = (bas + haut) / 2;
+      if (mesure(m) > HAUTEUR_CIBLE) haut = m; else { bas = m; best = m; }
+    }
+    pts = calages[un][echelle] = +best.toFixed(2);
+  }
+  return { height: pts, textsize: +(24 / echelle).toFixed(2), includetext: true, margin: 0 };
+};
+const gen = () => {
+  const texte = v.value.trim() || " ";
+  const bcid = BC2D[f.value];
+  const un = BC1D[f.value];
+  eccbox.hidden = f.value !== "QRCode";
+  try {
+    const o = { text: texte };
+    if (bcid) {
+      o.bcid = bcid; o.scale = +t.value; o.margin = 4;
+      // On imprime le texte sous le code seulement quand c'est l'usage (DM, PDF417).
+      o.includetext = bcid === "datamatrix" || bcid === "pdf417";
+      if (bcid === "qrcode") o.ecl = ecc.value;
+    } else if (un) {
+      Object.assign(o, { bcid: un, scale: +t.value, ...opts1D(+t.value, un) });
+    } else {
+      throw new Error("type inconnu");
+    }
+    bwipjs.toCanvas(bc2d, o);
+    erreur.textContent = "";
+    feedback.textContent = "";
+  } catch (e) {
+    erreur.textContent = "Valeur non valide pour ce type de code.";
+  }
+};
+for (const el of [f, v, t, ecc]) el.addEventListener("input", gen);
+gen();
+
+/* ---------- Export PNG et copie dans le presse-papiers ---------- */
+/* On relance la même bibliothèque sur un canvas hors écran, 3 fois plus
+   grand, avec un fond blanc (une image exportée n'a pas de page blanche). */
+const buildHiRes = () => {
+  const texte = v.value.trim() || " ";
+  const k = 3;
+  const bcid = BC2D[f.value];
+  const un = BC1D[f.value];
+  const c = document.createElement("canvas");
+  if (bcid) {
+    const o = {
+      bcid, text: texte, scale: +t.value * k, margin: 4,
+      backgroundcolor: "ffffff",
+      includetext: bcid === "datamatrix" || bcid === "pdf417",
+    };
+    if (bcid === "qrcode") o.ecl = ecc.value;
+    bwipjs.toCanvas(c, o);
+  } else if (un) {
+    const echelle = +t.value * k; // 1D : la largeur x3, la hauteur reste fixe
+    const o = { bcid: un, text: texte, scale: echelle,
+                backgroundcolor: "ffffff", ...opts1D(echelle, un) };
+    bwipjs.toCanvas(c, o);
+  } else {
+    throw new Error("type inconnu");
+  }
+  return c;
+};
+const nomPNG = () => "code-barres-" + f.value.toLowerCase().replace(/[^a-z0-9]/g, "-") + ".png";
+const message = (texte, couleur) => { feedback.textContent = texte; feedback.style.color = couleur; };
+
+const exporter = () => {
+  try {
+    const a = document.createElement("a");
+    a.href = buildHiRes().toDataURL("image/png");
+    a.download = nomPNG();
+    a.click();
+    message("Image exportée : " + nomPNG(), "#146c2e");
+  } catch (e) {
+    message("Export impossible : valeur non valide pour ce type de code.", "#b00020");
+  }
+};
+
+const copier = async () => {
+  let url;
+  try {
+    url = buildHiRes().toDataURL("image/png");
+  } catch (e) {
+    message("Copie impossible : valeur non valide pour ce type de code.", "#b00020");
+    return;
+  }
+  try {
+    /* Le blob est fabriqué SANS attente asynchrone : le geste du clic
+       reste "frais" pour le presse-papiers (exigence des navigateurs). */
+    const octets = Uint8Array.from(atob(url.split(",")[1]), (ch) => ch.charCodeAt(0));
+    await navigator.clipboard.write([
+      new ClipboardItem({ "image/png": new Blob([octets], { type: "image/png" }) })
+    ]);
+    message("Image copiée : collez avec Ctrl+V (traitement de texte, mail…).", "#146c2e");
+  } catch (e) {
+    message("Copie impossible sur ce navigateur : utilisez « Exporter en PNG » "
+          + "ou clic droit sur le code → Enregistrer l'image.", "#b00020");
+  }
+};
+</script>
+
+</body>
+</html>
